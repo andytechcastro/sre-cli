@@ -54,8 +54,8 @@ func TestCreatePod(t *testing.T) {
 			},
 		},
 	})
-	operator := repositories.NewOperatorRepository(client)
-	list, err := operator.GetAll()
+	operator := repositories.NewPodRepository(client)
+	list, err := operator.GetAll("tools")
 	if err != nil {
 		fmt.Println(err.Error())
 	}
