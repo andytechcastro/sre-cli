@@ -1,8 +1,10 @@
 package interactors
 
 import (
+	"fmt"
 	"sre-cli/entities"
 	"sre-cli/usecases/repositories"
+	"sync"
 )
 
 type podInteractor struct {
@@ -23,12 +25,18 @@ func NewPodInteractor(podRepo map[string]repositories.PodRepository) PodInteract
 
 func (oi *podInteractor) GetAll(namespace string) (map[string][]entities.Pod, error) {
 	podLists := map[string][]entities.Pod{}
+	wg := sync.WaitGroup{}
+	var err error
 	for key, repo := range oi.PodRepo {
-		podList, err := repo.GetAll(namespace)
-		if err != nil {
-			return podLists, nil
-		}
-		podLists[key] = podList
+		wg.Add(1)
+		go func(namespace string, key string, repo repositories.PodRepository) {
+			podLists[key], err = repo.GetAll(namespace)
+			if err != nil {
+				fmt.Println(err)
+			}
+			defer wg.Done()
+		}(namespace, key, repo)
 	}
+	wg.Wait()
 	return podLists, nil
 }

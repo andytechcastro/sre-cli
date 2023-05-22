@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"sre-cli/entities"
 	"sre-cli/usecases/repositories"
+	"sync"
 )
 
 type deploymentInteractor struct {
@@ -13,33 +14,34 @@ type deploymentInteractor struct {
 
 // DeploymentInteractor is an interface for connect to deployment interactor
 type DeploymentInteractor interface {
-	GetAll(string, bool) (map[string][]entities.Deployment, error)
+	GetAll(string) (map[string][]entities.Deployment, error)
 }
 
 // NewDeploymentInteractor return a new struct with deploymentInteractor
-func NewDeploymentInteractor(deploymentRepo map[string]repositories.DeploymentRepository, podRepo map[string]repositories.PodRepository) DeploymentInteractor {
+func NewDeploymentInteractor(
+	deploymentRepo map[string]repositories.DeploymentRepository,
+	podRepo map[string]repositories.PodRepository,
+) DeploymentInteractor {
 	return &deploymentInteractor{
 		DeploymentRepo: deploymentRepo,
 		PodRepo:        podRepo,
 	}
 }
 
-func (dI *deploymentInteractor) GetAll(namespace string, pods bool) (map[string][]entities.Deployment, error) {
-	DeploymentLists := map[string][]entities.Deployment{}
+func (dI *deploymentInteractor) GetAll(namespace string) (map[string][]entities.Deployment, error) {
+	deploymentLists := map[string][]entities.Deployment{}
+	wg := sync.WaitGroup{}
+	var err error
 	for key, repo := range dI.DeploymentRepo {
-		DeploymentList, err := repo.GetAll(namespace)
-		if err != nil {
-			return DeploymentLists, nil
-		}
-		if pods {
-			for keyDeployment, deployment := range DeploymentList {
-				DeploymentList[keyDeployment].PodList, err = dI.PodRepo[key].GetPodByLabels(namespace, deployment.MatchLabels)
-				if err != nil {
-					fmt.Println(err)
-				}
+		wg.Add(1)
+		go func(namespace string, key string, repo repositories.DeploymentRepository) {
+			deploymentLists[key], err = repo.GetAll(namespace)
+			if err != nil {
+				fmt.Println(err)
 			}
-		}
-		DeploymentLists[key] = DeploymentList
+			defer wg.Done()
+		}(namespace, key, repo)
 	}
-	return DeploymentLists, nil
+	wg.Wait()
+	return deploymentLists, nil
 }

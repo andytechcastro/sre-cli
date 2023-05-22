@@ -3,7 +3,7 @@ package cmd
 import "github.com/spf13/cobra"
 
 var podCmd = &cobra.Command{
-	Use:   "pod",
+	Use:   "pods",
 	Short: "This command is for use the pod Options",
 	Long:  "With this command you can call the pods option",
 	Run: func(cmd *cobra.Command, args []string) {

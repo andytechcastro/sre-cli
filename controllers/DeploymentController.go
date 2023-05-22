@@ -15,7 +15,7 @@ type deploymentController struct {
 
 // DeploymentController is the interface for connect to this controller
 type DeploymentController interface {
-	GetAllDeploymentsTerminal(string, bool)
+	GetAllDeploymentsTerminal(string)
 }
 
 // NewDeploymentController return a controller
@@ -25,8 +25,8 @@ func NewDeploymentController(interactor interactors.DeploymentInteractor) Deploy
 	}
 }
 
-func (dC *deploymentController) GetAllDeploymentsTerminal(namespace string, pods bool) {
-	deploymentLists, err := dC.DeploymentInteractor.GetAll(namespace, pods)
+func (dC *deploymentController) GetAllDeploymentsTerminal(namespace string) {
+	deploymentLists, err := dC.DeploymentInteractor.GetAll(namespace)
 	if err != nil {
 		fmt.Println(err)
 		log.Panic()
